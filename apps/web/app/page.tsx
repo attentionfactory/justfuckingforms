@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { EmbedSnippet } from "@/components/jff/embed-snippet";
 import { DemoForm } from "@/components/jff/demo-form";
+import { SignupCTA } from "@/components/jff/signup-cta";
 
 export default function Home() {
   return (
@@ -28,18 +27,7 @@ export default function Home() {
         <strong>$3/month</strong> after your first 100 free.
       </p>
 
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,
-          marginTop: 28,
-          marginBottom: 16,
-        }}
-      >
-        <Input className="h-14 text-base" placeholder="you@email.com" />
-        <Button className="h-14 text-base w-full">get my endpoint →</Button>
-      </div>
+      <SignupCTA />
       <p style={{ fontSize: 16 }}>
         100 free submissions/month. no credit card.{" "}
         <Link href="#">see what an email looks like</Link>.
