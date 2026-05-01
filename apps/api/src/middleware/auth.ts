@@ -3,9 +3,11 @@ import { eq } from 'drizzle-orm';
 import { createDb, schema } from '@jff/db';
 import type { AppEnv } from '../types';
 
-// Session cookie name used by Better Auth (default config). If we ever
+// Session cookie name used by Better Auth (default config). In HTTPS prod
+// Better Auth auto-prefixes with `__Secure-`, so we check both. If we ever
 // customize Better Auth's cookieName, mirror that here.
 const SESSION_COOKIE_NAME = 'better-auth.session_token';
+const SESSION_COOKIE_NAME_SECURE = `__Secure-${SESSION_COOKIE_NAME}`;
 
 /**
  * Validate the Better Auth session cookie issued by apps/web.
@@ -20,7 +22,9 @@ const SESSION_COOKIE_NAME = 'better-auth.session_token';
  */
 export const requireSession = (): MiddlewareHandler<AppEnv> => async (c, next) => {
   const rawCookie = c.req.header('cookie') ?? '';
-  const token = parseCookie(rawCookie, SESSION_COOKIE_NAME);
+  const token =
+    parseCookie(rawCookie, SESSION_COOKIE_NAME) ??
+    parseCookie(rawCookie, SESSION_COOKIE_NAME_SECURE);
   if (!token) return c.json({ error: 'unauthorized' }, 401);
 
   // Strip Better Auth's signature suffix — `<token>.<signature>` — we only need the token.
