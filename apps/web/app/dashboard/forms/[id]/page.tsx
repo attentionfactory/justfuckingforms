@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AlertCircle, Settings, Trash2 } from "lucide-react";
+import { AlertCircle, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,7 @@ import { CodeBlock, EmbedSnippet } from "@/components/jff/embed-snippet";
 import { CopyEndpoint } from "@/components/jff/copy-endpoint";
 import { FormTabs, type FormTab } from "@/components/jff/form-tabs";
 import { SubmissionsTable } from "@/components/jff/submissions-table";
+import { DeleteFormDialog } from "@/components/jff/delete-form-dialog";
 import { FORMS, SUBS } from "@/lib/mock-data";
 
 type Props = {
@@ -309,9 +310,7 @@ export default async function FormDetailPage({ params, searchParams }: Props) {
           </div>
           <div className="row between">
             <Button>save</Button>
-            <Button variant="ghost" style={{ color: "var(--jff-danger)" }}>
-              <Trash2 size={14} /> delete form
-            </Button>
+            <DeleteFormDialog formName={form.name} submissionCount={form.subs} />
           </div>
           <p className="text-muted" style={{ fontSize: 13, marginTop: 16 }}>
             also see{" "}
