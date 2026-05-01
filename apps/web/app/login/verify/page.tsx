@@ -1,12 +1,23 @@
+import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { Check } from "lucide-react";
+import { auth } from "@/lib/auth";
 
-// Phase 7 stub: hardcoded email. Phase 3 will resolve the email from the verified session
-// and redirect via a server action / route handler.
-const STUB_EMAIL = "mercy@transcriptx.xyz";
+// Magic-link clicks resolve to GET /api/auth/magic-link/verify?token=...&callbackURL=/dashboard
+// directly — Better Auth performs the verification, sets the session cookie, and 302s the
+// browser. So this page is only reached if someone navigates here by hand.
+//
+// If a session exists → show "you're in" + immediate meta-refresh to /dashboard.
+// If not → bounce them back to /login.
+export default async function LoginVerifyPage() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) {
+    redirect("/login");
+  }
 
-export default function LoginVerifyPage() {
   return (
     <main className="af-page" style={{ paddingTop: 100 }}>
+      <meta httpEquiv="refresh" content="0;url=/dashboard" />
       <div style={{ marginBottom: 32 }}>
         <div className="mono" style={{ fontSize: 13, color: "var(--jff-fg)", fontWeight: 600 }}>
           jff.dev
@@ -34,7 +45,7 @@ export default function LoginVerifyPage() {
       <p>
         logging you in as{" "}
         <span className="mono" style={{ color: "var(--jff-fg)", fontSize: 16 }}>
-          {STUB_EMAIL}
+          {session.user.email}
         </span>
         .
       </p>

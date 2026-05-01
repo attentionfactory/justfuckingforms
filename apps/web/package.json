@@ -10,8 +10,11 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@jff/auth": "workspace:*",
+    "@jff/db": "workspace:*",
     "@jff/types": "workspace:*",
     "@jff/ui": "workspace:*",
+    "better-auth": "^1.1.7",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.14.0",
@@ -28,6 +31,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^16.4.5",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "tailwindcss": "^4",
