@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,18 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { signIn } from "@/lib/auth-client";
 
+// Top-level page wraps the form in <Suspense> so Next can statically prerender
+// the shell. useSearchParams() reads at runtime; without the boundary, build
+// fails with PRERENDER_ERROR.
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginFormShell />}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const sp = useSearchParams();
   const next = sp.get("next") ?? "/dashboard";
 
@@ -113,6 +124,22 @@ export default function LoginPage() {
       <p style={{ fontSize: 16, marginTop: 32 }}>
         no account yet? same form. we&apos;ll make one.
       </p>
+    </main>
+  );
+}
+
+// Static shell rendered during prerender. Same layout, no interactive bits —
+// gets replaced by <LoginForm /> on hydration.
+function LoginFormShell() {
+  return (
+    <main className="af-page" style={{ paddingTop: 80 }}>
+      <div style={{ marginBottom: 40 }}>
+        <div className="mono" style={{ fontSize: 13, color: "var(--jff-fg)", fontWeight: 600 }}>
+          jff.dev
+        </div>
+      </div>
+      <h1 style={{ fontSize: 38 }}>log in.</h1>
+      <p>we&apos;ll email you a link. no password to forget. no auth0 dashboard to hate.</p>
     </main>
   );
 }
