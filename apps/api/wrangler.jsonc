@@ -30,10 +30,10 @@
     "crons": ["0 0 1 * *"]
   },
 
-  /* Non-secret defaults. Real values land via `wrangler secret put` (production)
-     or .dev.vars (local). Both apps and packages read these from env. */
+  /* Non-secret defaults. Override per-environment via `wrangler secret put`
+     where appropriate (or via .dev.vars locally). */
   "vars": {
-    "WEB_BASE_URL": "https://justfuckingforms.com",
+    "WEB_BASE_URL": "https://jff-web.vercel.app",
     "EMAIL_FROM": "JFF <onboarding@resend.dev>"
   }
 
