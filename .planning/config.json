@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "project": {
+    "name": "JustFuckingForms",
+    "code": "JFF",
+    "domain_web": "justfuckingforms.com",
+    "domain_api": "api.jff.dev"
+  },
+  "workflow": {
+    "mode": "yolo",
+    "granularity": "fine",
+    "parallelization": true,
+    "commit_docs": true,
+    "research": false,
+    "plan_check": true,
+    "verifier": true,
+    "nyquist_validation": true,
+    "auto_advance": true
+  },
+  "git": {
+    "no_coauthor": true,
+    "milestone_workflow": true,
+    "issues_before_prs": true
+  },
+  "model_profile": "inherit",
+  "models": {
+    "researcher": "inherit",
+    "synthesizer": "inherit",
+    "roadmapper": "inherit",
+    "planner": "inherit",
+    "executor": "inherit",
+    "plan_checker": "inherit",
+    "verifier": "inherit"
+  }
+}
