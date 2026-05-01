@@ -10,12 +10,11 @@ type NavItem = {
   label: string;
   icon: React.ComponentType<{ size?: number }>;
   href: string;
-  badge?: number | string;
 };
 
 const PRIMARY: NavItem[] = [
-  { key: "forms", label: "Forms", icon: File, href: "/dashboard", badge: 4 },
-  { key: "inbox", label: "Inbox", icon: Inbox, href: "/dashboard/inbox", badge: 142 },
+  { key: "forms", label: "Forms", icon: File, href: "/dashboard" },
+  { key: "inbox", label: "Inbox", icon: Inbox, href: "/dashboard/inbox" },
   { key: "billing", label: "Billing", icon: CreditCard, href: "/dashboard/billing" },
   { key: "settings", label: "Settings", icon: Settings, href: "/dashboard/settings" },
 ];
@@ -53,11 +52,6 @@ export function Sidebar() {
       >
         <Icon size={15} />
         <span style={{ flex: 1 }}>{item.label}</span>
-        {item.badge != null && (
-          <span className="mono" style={{ fontSize: 11, color: "#a3a3a3" }}>
-            {item.badge}
-          </span>
-        )}
       </Link>
     );
   };
