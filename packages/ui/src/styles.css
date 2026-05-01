@@ -1,0 +1,193 @@
+/* JFF base styles — adapted from /tmp/jff_design/iloveforms/project/styles.css.
+   These layer on top of Tailwind v4 + shadcn primitives. JFF tokens are namespaced --jff-*
+   to avoid colliding with shadcn's --muted/--background/etc. */
+
+@import "./tokens.css";
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+body {
+  font-family: var(--jff-font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--jff-bg);
+  color: var(--jff-muted);
+}
+
+/* AF-style page wrapper — used for landing, auth, onboarding */
+.af-page {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 56px;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.55;
+  letter-spacing: -0.7px;
+  color: var(--jff-muted);
+}
+.af-page h1 {
+  font-size: 50px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  color: var(--jff-fg);
+  margin: 0 0 16px;
+}
+.af-page h2 {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--jff-fg);
+  margin: 32px 0 12px;
+}
+.af-page p { margin: 0 0 16px; }
+.af-page a {
+  color: var(--jff-link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.af-page strong { color: var(--jff-fg); font-weight: 600; }
+.af-page hr {
+  border: 0;
+  border-top: 1px solid var(--jff-line);
+  margin: 32px 0;
+}
+
+/* Sidebar shell — used for the dashboard */
+.sb-shell {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+  background: var(--jff-bg);
+}
+.sb-aside {
+  border-right: 1px solid var(--jff-line);
+  padding: 20px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--jff-bg-alt);
+}
+.sb-brand {
+  font-family: var(--jff-font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--jff-fg);
+  padding: 8px 12px 16px;
+  letter-spacing: -0.02em;
+}
+.sb-section {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #a3a3a3;
+  padding: 14px 12px 6px;
+  letter-spacing: 0.06em;
+}
+.sb-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #525252;
+  cursor: pointer;
+}
+.sb-link:hover {
+  background: var(--jff-line-soft);
+  color: var(--jff-fg);
+}
+.sb-link.active {
+  background: #fff;
+  color: var(--jff-fg);
+  border: 1px solid var(--jff-line);
+}
+.sb-foot {
+  margin-top: auto;
+  padding: 8px;
+  border-top: 1px solid var(--jff-line);
+}
+
+.main {
+  padding: 32px 40px;
+  max-width: 1100px;
+}
+.main h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--jff-fg);
+  letter-spacing: -0.03em;
+  margin: 0;
+  line-height: 1.1;
+}
+.main .crumb {
+  font-size: 13px;
+  color: var(--jff-muted);
+  margin-bottom: 12px;
+}
+.main .crumb a {
+  color: var(--jff-muted);
+  text-decoration: none;
+}
+.main .crumb a:hover { color: var(--jff-fg); }
+
+/* shadcn-style code block */
+.code {
+  font-family: var(--jff-font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  background: #0a0a0a;
+  color: #fafafa;
+  border-radius: 10px;
+  padding: 16px;
+  overflow-x: auto;
+  position: relative;
+}
+.code .tag { color: #f472b6; }
+.code .attr { color: #93c5fd; }
+.code .str { color: #fde68a; }
+.code .com { color: #737373; }
+
+.kbd {
+  font-family: var(--jff-font-mono);
+  font-size: 12px;
+  background: var(--jff-chip);
+  border: 1px solid var(--jff-line);
+  border-radius: 4px;
+  padding: 1px 6px;
+  color: var(--jff-fg);
+}
+
+/* utilities */
+.mono { font-family: var(--jff-font-mono); }
+.text-muted { color: var(--jff-muted); }
+.text-fg { color: var(--jff-fg); }
+.text-link { color: var(--jff-link); }
+.tight { letter-spacing: -0.7px; }
+
+.row { display: flex; align-items: center; gap: 12px; }
+.between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.stack { display: flex; flex-direction: column; gap: 12px; }
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* pulse keyframe used by the waiting-for-first-submission state */
+@keyframes jff-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.4); }
+}
