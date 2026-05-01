@@ -19,6 +19,9 @@ export type Bindings = {
   /** Polar credentials. */
   POLAR_ACCESS_TOKEN: string;
   POLAR_WEBHOOK_SECRET: string;
+  /** Polar product ids — set per-environment so dev points at sandbox products. */
+  POLAR_PRODUCT_STARTER: string;
+  POLAR_PRODUCT_PRO: string;
   /** Sentry DSN. */
   SENTRY_DSN: string;
   /** Cloudflare rate-limiter binding (declared in wrangler.jsonc). */

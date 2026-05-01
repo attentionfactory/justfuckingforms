@@ -1,19 +1,35 @@
-import { Button } from "@/components/ui/button";
+import { apiGet } from "@/lib/api";
+import { PLAN_LIMITS } from "@/lib/plans";
+import type { FormListItem, FormStats } from "@/lib/api-types";
+import type { Plan } from "@jff/types";
+import { ManageSubscriptionButton, UpgradeButton } from "./buttons";
 
-const TIERS = [
-  { name: "free", price: "$0", subs: "100", forms: "3", current: false },
-  { name: "starter", price: "$3", subs: "1,000", forms: "unlimited", current: true },
-  { name: "pro", price: "$9", subs: "10,000", forms: "unlimited", current: false },
-] as const;
-
-const INVOICES: Array<[string, string, string]> = [
-  ["apr 14, 2026", "starter", "$3.00"],
-  ["mar 14, 2026", "starter", "$3.00"],
-  ["feb 14, 2026", "starter", "$3.00"],
-  ["jan 14, 2026", "starter", "$3.00 — first month"],
+const TIERS: Array<{
+  name: Plan;
+  price: string;
+  subs: string;
+  forms: string;
+}> = [
+  { name: "free", price: "$0", subs: "100", forms: "3" },
+  { name: "starter", price: "$3", subs: "1,000", forms: "unlimited" },
+  { name: "pro", price: "$9", subs: "10,000", forms: "unlimited" },
 ];
 
-export default function BillingPage() {
+export default async function BillingPage() {
+  // Reuse /api/forms + form-detail to get current plan/usage. Phase 9b can
+  // collapse into a single /api/me endpoint later.
+  const { forms } = await apiGet<{ forms: FormListItem[] }>("/api/forms");
+  const sub = forms.length
+    ? await apiGet<{ stats: FormStats }>(`/api/forms/${forms[0].id}`).then(
+        (r) => ({ plan: r.stats.plan, used: r.stats.planUsed }),
+      )
+    : { plan: "free" as Plan, used: 0 };
+
+  const limit = PLAN_LIMITS[sub.plan];
+  const pct = Math.min(100, (sub.used / limit) * 100);
+  const isPaid = sub.plan !== "free";
+  const upgradeTarget: Plan = sub.plan === "pro" ? "pro" : sub.plan === "starter" ? "pro" : "starter";
+
   return (
     <>
       <div className="crumb">workspace / billing</div>
@@ -51,20 +67,26 @@ export default function BillingPage() {
                 margin: "4px 0",
               }}
             >
-              starter
+              {sub.plan}
             </div>
             <div style={{ color: "#a3a3a3", fontSize: 14 }}>
-              $3/month · renews may 14, 2026
+              {sub.plan === "free"
+                ? "no charge. resets monthly."
+                : `${TIERS.find((t) => t.name === sub.plan)?.price}/month`}
             </div>
           </div>
-          <Button style={{ background: "#fafafa", color: "var(--jff-fg)" }}>
-            upgrade to pro
-          </Button>
+          {isPaid ? (
+            <ManageSubscriptionButton />
+          ) : (
+            <UpgradeButton plan={upgradeTarget} label={`upgrade to ${upgradeTarget}`} />
+          )}
         </div>
         <div style={{ marginTop: 24 }}>
           <div className="between" style={{ marginBottom: 8, fontSize: 13 }}>
             <span style={{ color: "#a3a3a3" }}>submissions used</span>
-            <span className="mono">347 / 1,000</span>
+            <span className="mono">
+              {sub.used.toLocaleString()} / {limit.toLocaleString()}
+            </span>
           </div>
           <div
             style={{
@@ -76,7 +98,7 @@ export default function BillingPage() {
           >
             <div
               style={{
-                width: "34.7%",
+                width: `${pct}%`,
                 height: "100%",
                 background: "#fafafa",
               }}
@@ -93,162 +115,36 @@ export default function BillingPage() {
           marginBottom: 32,
         }}
       >
-        {TIERS.map((p) => (
-          <div
-            key={p.name}
-            className="card"
-            style={{
-              background: "#fff",
-              border: `1px solid ${p.current ? "var(--jff-fg)" : "var(--jff-line)"}`,
-              borderRadius: 12,
-              padding: 20,
-              boxShadow: p.current ? "0 0 0 1px var(--jff-fg)" : "none",
-            }}
-          >
-            <div className="between">
-              <div
-                style={{
-                  fontWeight: 700,
-                  color: "var(--jff-fg)",
-                  fontSize: 16,
-                  textTransform: "lowercase",
-                }}
-              >
-                {p.name}
-              </div>
-              {p.current && (
-                <span
-                  style={{
-                    background: "var(--jff-chip)",
-                    color: "#525252",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    padding: "0 8px",
-                    height: 20,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    borderRadius: 999,
-                  }}
-                >
-                  current
-                </span>
-              )}
-            </div>
+        {TIERS.map((p) => {
+          const isCurrent = p.name === sub.plan;
+          return (
             <div
+              key={p.name}
+              className="card"
               style={{
-                fontSize: 32,
-                fontWeight: 700,
-                color: "var(--jff-fg)",
-                letterSpacing: "-0.03em",
-                marginTop: 8,
+                background: "#fff",
+                border: `1px solid ${isCurrent ? "var(--jff-fg)" : "var(--jff-line)"}`,
+                borderRadius: 12,
+                padding: 20,
+                boxShadow: isCurrent ? "0 0 0 1px var(--jff-fg)" : "none",
               }}
             >
-              {p.price}
-              <span
-                style={{
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color: "var(--jff-muted)",
-                }}
-              >
-                /mo
-              </span>
-            </div>
-            <div className="text-muted" style={{ fontSize: 13, marginTop: 12 }}>
-              <div>{p.subs} submissions/mo</div>
-              <div>{p.forms} forms</div>
-              <div>spam filter, csv export</div>
-            </div>
-            <Button
-              variant="outline"
-              className="w-full"
-              style={{ marginTop: 16, width: "100%" }}
-              disabled={p.current}
-            >
-              {p.current ? "you're here" : p.name === "pro" ? "upgrade" : "switch"}
-            </Button>
-          </div>
-        ))}
-      </div>
-
-      <div
-        className="card"
-        style={{
-          background: "#fff",
-          border: "1px solid var(--jff-line)",
-          borderRadius: 12,
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            padding: "14px 18px",
-            borderBottom: "1px solid var(--jff-line)",
-            fontWeight: 600,
-            color: "var(--jff-fg)",
-          }}
-        >
-          invoices
-        </div>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
-          <thead>
-            <tr>
-              {["date", "plan", "amount", "status", ""].map((h, i) => (
-                <th
-                  key={h || i}
+              <div className="between">
+                <div
                   style={{
-                    textAlign: "left",
-                    fontWeight: 600,
+                    fontWeight: 700,
                     color: "var(--jff-fg)",
-                    padding: "10px 14px",
-                    borderBottom: "1px solid var(--jff-line)",
-                    fontSize: 12,
-                    letterSpacing: "0.02em",
-                    textTransform: "uppercase",
+                    fontSize: 16,
+                    textTransform: "lowercase",
                   }}
                 >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {INVOICES.map((r, i) => (
-              <tr key={i}>
-                <td
-                  className="mono"
-                  style={{
-                    padding: 14,
-                    borderBottom: "1px solid var(--jff-line-soft)",
-                    fontSize: 13,
-                  }}
-                >
-                  {r[0]}
-                </td>
-                <td
-                  style={{
-                    padding: 14,
-                    borderBottom: "1px solid var(--jff-line-soft)",
-                    color: "var(--jff-fg)",
-                  }}
-                >
-                  {r[1]}
-                </td>
-                <td
-                  className="mono"
-                  style={{
-                    padding: 14,
-                    borderBottom: "1px solid var(--jff-line-soft)",
-                    color: "var(--jff-fg)",
-                  }}
-                >
-                  {r[2]}
-                </td>
-                <td style={{ padding: 14, borderBottom: "1px solid var(--jff-line-soft)" }}>
+                  {p.name}
+                </div>
+                {isCurrent && (
                   <span
                     style={{
-                      background: "var(--jff-ok-bg)",
-                      color: "var(--jff-ok-fg)",
+                      background: "var(--jff-chip)",
+                      color: "#525252",
                       fontSize: 11,
                       fontWeight: 600,
                       padding: "0 8px",
@@ -258,22 +154,74 @@ export default function BillingPage() {
                       borderRadius: 999,
                     }}
                   >
-                    paid
+                    current
                   </span>
-                </td>
-                <td style={{ padding: 14, borderBottom: "1px solid var(--jff-line-soft)" }}>
-                  <a
-                    href="#"
-                    style={{ color: "var(--jff-link)", fontSize: 13 }}
+                )}
+              </div>
+              <div
+                style={{
+                  fontSize: 32,
+                  fontWeight: 700,
+                  color: "var(--jff-fg)",
+                  letterSpacing: "-0.03em",
+                  marginTop: 8,
+                }}
+              >
+                {p.price}
+                <span
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 500,
+                    color: "var(--jff-muted)",
+                  }}
+                >
+                  /mo
+                </span>
+              </div>
+              <div className="text-muted" style={{ fontSize: 13, marginTop: 12 }}>
+                <div>{p.subs} submissions/mo</div>
+                <div>{p.forms} forms</div>
+                <div>spam filter, csv export</div>
+              </div>
+              <div style={{ marginTop: 16 }}>
+                {isCurrent ? (
+                  <button
+                    disabled
+                    style={{
+                      width: "100%",
+                      height: 32,
+                      borderRadius: 8,
+                      border: "1px solid var(--jff-line)",
+                      background: "#fff",
+                      color: "var(--jff-muted)",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: "not-allowed",
+                    }}
                   >
-                    receipt ↓
-                  </a>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                    you&apos;re here
+                  </button>
+                ) : p.name === "free" ? (
+                  // Downgrade to free → use portal to cancel; not a checkout.
+                  <ManageSubscriptionButton />
+                ) : (
+                  <UpgradeButton
+                    plan={p.name}
+                    label={p.name === "pro" ? "upgrade" : "switch"}
+                    fullWidth
+                  />
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
+
+      <p className="text-muted" style={{ fontSize: 13 }}>
+        {isPaid
+          ? "manage payment method, view invoices, and cancel from the polar portal."
+          : "no charges yet. upgrade unlocks the polar portal for invoice history."}
+      </p>
     </>
   );
 }
