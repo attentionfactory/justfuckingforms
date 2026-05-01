@@ -47,10 +47,27 @@ function buildAuth(): Auth {
  * Lazy proxy: routes / server components do `auth.api.getSession(...)` etc.
  * The first property access triggers `buildAuth()`, which reads env. After
  * that, we cache the instance.
+ *
+ * `has` and `ownKeys` are required because Better Auth's `toNextJsHandler`
+ * uses `"handler" in auth` to branch — without these traps it reads the
+ * empty target and returns false, then tries to call the proxy as a
+ * function and crashes.
  */
 export const auth = new Proxy({} as Auth, {
   get(_target, prop) {
     _auth ??= buildAuth();
     return Reflect.get(_auth, prop);
+  },
+  has(_target, prop) {
+    _auth ??= buildAuth();
+    return Reflect.has(_auth, prop);
+  },
+  ownKeys(_target) {
+    _auth ??= buildAuth();
+    return Reflect.ownKeys(_auth);
+  },
+  getOwnPropertyDescriptor(_target, prop) {
+    _auth ??= buildAuth();
+    return Reflect.getOwnPropertyDescriptor(_auth, prop);
   },
 });
