@@ -17,6 +17,11 @@ export function UpgradeButton({
   cycle: BillingCycle;
   label: string;
   disabled?: boolean;
+  /**
+   * "default" — white bg, black text. Used on the dark current-plan card so
+   * the button doesn't inherit the card's white text color.
+   * "outline" — bordered + transparent. Used on white tier cards.
+   */
   variant?: "default" | "outline";
   fullWidth?: boolean;
 }) {
@@ -33,12 +38,24 @@ export function UpgradeButton({
     });
   };
 
+  // Match the visual treatment of ManageSubscriptionButton when on dark cards.
+  const inlineStyle =
+    variant === "default"
+      ? {
+          background: "#fafafa",
+          color: "var(--jff-fg)",
+          ...(fullWidth ? { width: "100%" } : {}),
+        }
+      : fullWidth
+        ? { width: "100%" }
+        : undefined;
+
   return (
     <Button
-      variant={variant}
+      variant={variant === "outline" ? "outline" : undefined}
       onClick={onClick}
       disabled={disabled || pending}
-      style={fullWidth ? { width: "100%" } : undefined}
+      style={inlineStyle}
     >
       {pending ? "redirecting..." : label}
     </Button>

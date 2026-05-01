@@ -98,6 +98,7 @@ export default async function BillingPage() {
               plan={upgradeTarget}
               cycle="annual"
               label={`upgrade to ${upgradeTarget}`}
+              variant="default"
             />
           )}
         </div>
