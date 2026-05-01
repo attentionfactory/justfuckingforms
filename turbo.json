@@ -5,7 +5,24 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
+      "env": [
+        "DATABASE_URL",
+        "DATABASE_URL_UNPOOLED",
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
+        "RESEND_API_KEY",
+        "RESEND_FROM",
+        "EMAIL_FROM",
+        "POLAR_ACCESS_TOKEN",
+        "POLAR_WEBHOOK_SECRET",
+        "POLAR_PRODUCT_STARTER_MONTHLY",
+        "POLAR_PRODUCT_STARTER_ANNUAL",
+        "POLAR_PRODUCT_PRO_MONTHLY",
+        "POLAR_PRODUCT_PRO_ANNUAL",
+        "SENTRY_DSN",
+        "NEXT_PUBLIC_API_URL"
+      ]
     },
     "dev": {
       "cache": false,
