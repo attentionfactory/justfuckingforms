@@ -13,7 +13,9 @@
     "type-check": "tsc --noEmit",
     "lint": "echo 'no lint configured for db'",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "node scripts/migrate.mjs",
+    "db:reset": "node scripts/reset.mjs",
+    "db:inspect": "node scripts/inspect.mjs",
     "studio": "drizzle-kit studio"
   },
   "dependencies": {
@@ -23,7 +25,11 @@
   },
   "devDependencies": {
     "@jff/config": "workspace:*",
+    "@types/node": "^20",
+    "@types/pg": "^8.20.0",
+    "dotenv": "^16.4.5",
     "drizzle-kit": "^0.28.1",
+    "pg": "^8.20.0",
     "typescript": "5.9.2"
   }
 }
