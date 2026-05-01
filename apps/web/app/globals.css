@@ -1,0 +1,84 @@
+@import "tailwindcss";
+@import "@jff/ui/styles";
+@import "tw-animate-css";
+
+/* No dark mode in JFF. We strip the `.dark` block shadcn ships with. */
+
+@theme inline {
+  /* JFF tokens exposed as Tailwind utilities (so `bg-jff-bg`, `text-jff-fg` etc. work) */
+  --color-jff-bg: var(--jff-bg);
+  --color-jff-bg-alt: var(--jff-bg-alt);
+  --color-jff-fg: var(--jff-fg);
+  --color-jff-muted: var(--jff-muted);
+  --color-jff-line: var(--jff-line);
+  --color-jff-line-soft: var(--jff-line-soft);
+  --color-jff-chip: var(--jff-chip);
+  --color-jff-link: var(--jff-link);
+  --color-jff-danger: var(--jff-danger);
+  --color-jff-good: var(--jff-good);
+
+  /* Fonts: shadcn references --font-sans / --font-mono via theme. Map to next/font vars. */
+  --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-heading: var(--font-sans);
+
+  /* Shadcn primitives — pointed at our root vars below */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
+}
+
+/* JFF-locked shadcn theme — white only, neutral, no dark variants. */
+:root {
+  --background: #fefefe;
+  --foreground: #0a0a0a;
+  --card: #ffffff;
+  --card-foreground: #0a0a0a;
+  --popover: #ffffff;
+  --popover-foreground: #0a0a0a;
+  --primary: #0a0a0a;            /* black buttons */
+  --primary-foreground: #fefefe;
+  --secondary: #f5f5f5;
+  --secondary-foreground: #0a0a0a;
+  --muted: #f5f5f5;              /* shadcn's muted = bg chip, NOT text color */
+  --muted-foreground: #737373;
+  --accent: #f5f5f5;
+  --accent-foreground: #0a0a0a;
+  --destructive: #dc2626;
+  --border: #e5e5e5;
+  --input: #e5e5e5;
+  --ring: #0a0a0a;
+  --radius: 8px;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    font-family: var(--font-sans);
+  }
+  body {
+    background: var(--jff-bg);
+    color: var(--jff-muted);
+  }
+}
