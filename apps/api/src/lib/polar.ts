@@ -10,7 +10,7 @@
 // the customer. On webhooks, we resolve our user via that field — no extra DB
 // column needed beyond subscriptions.polarSubscriptionId.
 
-import type { Plan } from '@jff/types';
+import type { Plan, BillingCycle } from '@jff/types';
 
 const POLAR_BASE = 'https://api.polar.sh/v1';
 
@@ -137,16 +137,46 @@ export type PolarSubscriptionWebhook = {
   };
 };
 
+type PolarProductEnv = {
+  POLAR_PRODUCT_STARTER_MONTHLY?: string;
+  POLAR_PRODUCT_STARTER_ANNUAL?: string;
+  POLAR_PRODUCT_PRO_MONTHLY?: string;
+  POLAR_PRODUCT_PRO_ANNUAL?: string;
+};
+
 /**
- * Map a Polar product_id back to our Plan enum. The mapping is configured
- * via env vars so prod/staging can use different Polar products.
+ * Map a Polar product_id back to our (Plan, BillingCycle) tuple. Configured
+ * via env vars so prod/staging/sandbox can each point at different products.
+ *
+ * Returns null on unknown product so the webhook handler can ignore it
+ * gracefully (Polar might emit events for products we haven't mapped yet,
+ * e.g., one-off charges or sandbox bleed-over).
  */
-export function planForProduct(
+export function planAndCycleForProduct(
   productId: string,
-  env: { POLAR_PRODUCT_STARTER?: string; POLAR_PRODUCT_PRO?: string },
-): Plan | null {
-  if (productId === env.POLAR_PRODUCT_STARTER) return 'starter';
-  if (productId === env.POLAR_PRODUCT_PRO) return 'pro';
+  env: PolarProductEnv,
+): { plan: Plan; cycle: BillingCycle } | null {
+  if (productId === env.POLAR_PRODUCT_STARTER_MONTHLY) return { plan: 'starter', cycle: 'monthly' };
+  if (productId === env.POLAR_PRODUCT_STARTER_ANNUAL) return { plan: 'starter', cycle: 'annual' };
+  if (productId === env.POLAR_PRODUCT_PRO_MONTHLY) return { plan: 'pro', cycle: 'monthly' };
+  if (productId === env.POLAR_PRODUCT_PRO_ANNUAL) return { plan: 'pro', cycle: 'annual' };
+  return null;
+}
+
+/**
+ * Inverse of planAndCycleForProduct: given (plan, cycle), return the matching
+ * Polar product id. Used by checkout creation. Free tier has no product.
+ */
+export function productForPlanAndCycle(
+  plan: Plan,
+  cycle: BillingCycle,
+  env: PolarProductEnv,
+): string | null {
+  if (plan === 'free') return null;
+  if (plan === 'starter' && cycle === 'monthly') return env.POLAR_PRODUCT_STARTER_MONTHLY ?? null;
+  if (plan === 'starter' && cycle === 'annual') return env.POLAR_PRODUCT_STARTER_ANNUAL ?? null;
+  if (plan === 'pro' && cycle === 'monthly') return env.POLAR_PRODUCT_PRO_MONTHLY ?? null;
+  if (plan === 'pro' && cycle === 'annual') return env.POLAR_PRODUCT_PRO_ANNUAL ?? null;
   return null;
 }
 

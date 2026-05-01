@@ -39,25 +39,30 @@ Until verified, leave `EMAIL_FROM=JFF <onboarding@resend.dev>` — Resend will o
 
 You'll set up:
 - 1 organization
-- 2 products (Starter $3/mo recurring, Pro $9/mo recurring)
+- **4 products** — one per (plan, cycle) tuple:
+  - Starter monthly · $3 USD/month recurring
+  - Starter annual · $30 USD/year recurring (2 months free vs monthly)
+  - Pro monthly · $9 USD/month recurring
+  - Pro annual · $90 USD/year recurring (2 months free vs monthly)
 - 1 webhook endpoint pointing at `https://api.jff.dev/api/webhooks/polar`
 
 Steps:
 
 1. polar.sh → Create org → Get verified
-2. Products → New product → "Starter" → $3 USD/month recurring → save the `product_id`
-3. Repeat for "Pro" → $9 USD/month recurring → save the `product_id`
-4. Settings → Webhooks → Add endpoint
+2. Products → New product → create each of the 4 above. Save each `product_id`.
+3. Settings → Webhooks → Add endpoint
    - URL: `https://api.jff.dev/api/webhooks/polar`
    - Events: `subscription.created`, `subscription.updated`, `subscription.canceled`
    - Save the **signing secret** (starts with `whsec_`)
-5. Settings → API Keys → Create access token → save it
+4. Settings → API Keys → Create access token → save it
 
 You should now have:
 - `POLAR_ACCESS_TOKEN` — the API key
 - `POLAR_WEBHOOK_SECRET` — the `whsec_...` value
-- `POLAR_PRODUCT_STARTER` — the Starter `product_id`
-- `POLAR_PRODUCT_PRO` — the Pro `product_id`
+- `POLAR_PRODUCT_STARTER_MONTHLY`
+- `POLAR_PRODUCT_STARTER_ANNUAL`
+- `POLAR_PRODUCT_PRO_MONTHLY`
+- `POLAR_PRODUCT_PRO_ANNUAL`
 
 For development, Polar has a **sandbox** at sandbox.polar.sh — use a separate token + product ids in dev.
 
@@ -79,8 +84,10 @@ pnpm exec wrangler secret put RESEND_API_KEY
 pnpm exec wrangler secret put EMAIL_FROM
 pnpm exec wrangler secret put POLAR_ACCESS_TOKEN
 pnpm exec wrangler secret put POLAR_WEBHOOK_SECRET
-pnpm exec wrangler secret put POLAR_PRODUCT_STARTER
-pnpm exec wrangler secret put POLAR_PRODUCT_PRO
+pnpm exec wrangler secret put POLAR_PRODUCT_STARTER_MONTHLY
+pnpm exec wrangler secret put POLAR_PRODUCT_STARTER_ANNUAL
+pnpm exec wrangler secret put POLAR_PRODUCT_PRO_MONTHLY
+pnpm exec wrangler secret put POLAR_PRODUCT_PRO_ANNUAL
 pnpm exec wrangler secret put SENTRY_DSN              # optional, leave blank if not using
 ```
 

@@ -1,4 +1,5 @@
 export type Plan = 'free' | 'starter' | 'pro';
+export type BillingCycle = 'monthly' | 'annual';
 export type SubscriptionStatus = 'active' | 'canceled' | 'past_due';
 export type NotificationFrequency = 'every' | 'daily' | 'weekly' | 'none';
 

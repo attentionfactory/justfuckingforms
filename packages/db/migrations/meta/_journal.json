@@ -8,6 +8,13 @@
       "when": 1777614787507,
       "tag": "0000_lethal_captain_stacy",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777630105780,
+      "tag": "0001_slow_hellion",
+      "breakpoints": true
     }
   ]
 }

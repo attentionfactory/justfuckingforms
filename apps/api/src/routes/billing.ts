@@ -6,32 +6,42 @@ import {
   createCheckout,
   createCustomerPortal,
   verifyWebhookSignature,
-  planForProduct,
+  planAndCycleForProduct,
+  productForPlanAndCycle,
   type PolarSubscriptionWebhook,
 } from '../lib/polar';
 import type { AppEnv } from '../types';
+import type { BillingCycle, Plan } from '@jff/types';
 
 export const billing = new Hono<AppEnv>();
 
 /* ============================================================================
    POST /api/billing/checkout — create a Polar checkout session for an upgrade.
-   Body: { plan: 'starter' | 'pro' }
+   Body: { plan: 'starter' | 'pro', cycle?: 'monthly' | 'annual' }
+   `cycle` defaults to 'annual' (UI default); explicit 'monthly' supported.
    Returns: { url } — frontend window.location.href = url
    ============================================================================ */
 
 billing.post('/api/billing/checkout', requireSession(), async (c) => {
   const user = c.get('user');
-  const body = (await c.req.json().catch(() => ({}))) as { plan?: string };
-  const plan = body.plan;
+  const body = (await c.req.json().catch(() => ({}))) as {
+    plan?: string;
+    cycle?: string;
+  };
+  const plan = body.plan as Plan | undefined;
+  const cycle = (body.cycle ?? 'annual') as BillingCycle;
 
-  const productId =
-    plan === 'starter'
-      ? c.env.POLAR_PRODUCT_STARTER
-      : plan === 'pro'
-        ? c.env.POLAR_PRODUCT_PRO
-        : null;
-  if (!productId) {
+  if (plan !== 'starter' && plan !== 'pro') {
     return c.json({ error: "pick 'starter' or 'pro'." }, 400);
+  }
+  if (cycle !== 'monthly' && cycle !== 'annual') {
+    return c.json({ error: "cycle must be 'monthly' or 'annual'." }, 400);
+  }
+
+  const productId = productForPlanAndCycle(plan, cycle, c.env);
+  if (!productId) {
+    console.error('[jff/billing] no product for', { plan, cycle });
+    return c.json({ error: 'this plan is not configured.' }, 500);
   }
 
   try {
@@ -50,7 +60,6 @@ billing.post('/api/billing/checkout', requireSession(), async (c) => {
 
 /* ============================================================================
    POST /api/billing/portal — open Polar's hosted portal for an existing customer.
-   Returns: { url }
    ============================================================================ */
 
 billing.post('/api/billing/portal', requireSession(), async (c) => {
@@ -68,7 +77,6 @@ billing.post('/api/billing/portal', requireSession(), async (c) => {
 
 /* ============================================================================
    POST /api/webhooks/polar — receive Polar subscription events.
-   No session check; we verify HMAC against POLAR_WEBHOOK_SECRET instead.
    ============================================================================ */
 
 billing.post('/api/webhooks/polar', async (c) => {
@@ -97,8 +105,6 @@ billing.post('/api/webhooks/polar', async (c) => {
     return c.json({ error: 'invalid json' }, 400);
   }
 
-  // We only act on subscription lifecycle events. Other events (checkout
-  // started, etc.) are 200'd silently — Polar retries non-2xx responses.
   if (
     event.type !== 'subscription.created' &&
     event.type !== 'subscription.updated' &&
@@ -113,8 +119,8 @@ billing.post('/api/webhooks/polar', async (c) => {
     return c.json({ ok: true, warning: 'no external_id' });
   }
 
-  const plan = planForProduct(event.data.product_id, c.env);
-  if (!plan) {
+  const mapped = planAndCycleForProduct(event.data.product_id, c.env);
+  if (!mapped) {
     console.warn('[jff/webhook] unknown product_id', event.data.product_id);
     return c.json({ ok: true, warning: 'unknown product' });
   }
@@ -132,8 +138,6 @@ billing.post('/api/webhooks/polar', async (c) => {
 
   const db = createDb(c.env.DATABASE_URL);
 
-  // Upsert by userId. Polar can also send subscription.updated before .created
-  // in race conditions, so we always update if a row exists.
   const [existing] = await db
     .select()
     .from(schema.subscriptions)
@@ -144,7 +148,8 @@ billing.post('/api/webhooks/polar', async (c) => {
     await db
       .update(schema.subscriptions)
       .set({
-        plan,
+        plan: mapped.plan,
+        billingCycle: mapped.cycle,
         status,
         polarSubscriptionId: event.data.id,
         currentPeriodEnd,
@@ -153,7 +158,8 @@ billing.post('/api/webhooks/polar', async (c) => {
   } else {
     await db.insert(schema.subscriptions).values({
       userId,
-      plan,
+      plan: mapped.plan,
+      billingCycle: mapped.cycle,
       status,
       polarSubscriptionId: event.data.id,
       currentPeriodEnd,
@@ -161,5 +167,5 @@ billing.post('/api/webhooks/polar', async (c) => {
     });
   }
 
-  return c.json({ ok: true, plan, status });
+  return c.json({ ok: true, plan: mapped.plan, cycle: mapped.cycle, status });
 });

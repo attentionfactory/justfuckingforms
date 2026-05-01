@@ -2,7 +2,12 @@
 // @jff/types so they only ship to the dashboard bundle (the API owns its own
 // types via Drizzle's $inferSelect).
 
-import type { Plan, NotificationFrequency, InferredField } from '@jff/types';
+import type {
+  Plan,
+  BillingCycle,
+  NotificationFrequency,
+  InferredField,
+} from '@jff/types';
 
 export type ApiForm = {
   id: string;
@@ -33,6 +38,7 @@ export type FormStats = {
   spamBlocked: number;
   planUsed: number;
   plan: Plan;
+  cycle: BillingCycle;
 };
 
 export type ApiSubmission = {

@@ -1,5 +1,6 @@
 "use server";
 
+import type { BillingCycle } from "@jff/types";
 import { apiFetch } from "@/lib/api";
 
 type Result = { ok: true; url: string } | { ok: false; error: string };
@@ -9,11 +10,14 @@ async function jsonError(res: Response): Promise<string> {
   return body?.error ?? `request failed (${res.status})`;
 }
 
-export async function checkoutAction(plan: "starter" | "pro"): Promise<Result> {
+export async function checkoutAction(
+  plan: "starter" | "pro",
+  cycle: BillingCycle = "annual",
+): Promise<Result> {
   const res = await apiFetch("/api/billing/checkout", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ plan }),
+    body: JSON.stringify({ plan, cycle }),
   });
   if (!res.ok) return { ok: false, error: await jsonError(res) };
   const { url } = (await res.json()) as { url: string };

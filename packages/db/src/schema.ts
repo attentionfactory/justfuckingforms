@@ -83,6 +83,7 @@ export const notificationFrequencyEnum = pgEnum('notification_frequency', [
   'weekly',
   'none',
 ]);
+export const billingCycleEnum = pgEnum('billing_cycle', ['monthly', 'annual']);
 
 export const forms = pgTable('forms', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -123,6 +124,12 @@ export const subscriptions = pgTable('subscriptions', {
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
   plan: planEnum('plan').notNull().default('free'),
+  /**
+   * 'monthly' or 'annual'. Determines which Polar product the subscription is
+   * tied to. Annual gets ~17% off (2 months free). Free-tier users default to
+   * 'monthly' since the cycle is meaningless for them.
+   */
+  billingCycle: billingCycleEnum('billing_cycle').notNull().default('monthly'),
   polarSubscriptionId: text('polar_subscription_id'),
   status: subscriptionStatusEnum('status').notNull().default('active'),
   currentPeriodEnd: timestamp('current_period_end'),

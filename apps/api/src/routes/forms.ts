@@ -121,9 +121,13 @@ forms.get('/api/forms/:id', async (c) => {
     .from(schema.submissions)
     .where(eq(schema.submissions.formId, id));
 
-  // User's plan for the stat denominator ("47 of 1,000").
+  // User's plan + cycle for the stat denominator and the billing UI.
   const [sub] = await db
-    .select({ plan: schema.subscriptions.plan, used: schema.subscriptions.submissionsUsed })
+    .select({
+      plan: schema.subscriptions.plan,
+      cycle: schema.subscriptions.billingCycle,
+      used: schema.subscriptions.submissionsUsed,
+    })
     .from(schema.subscriptions)
     .where(eq(schema.subscriptions.userId, user.id))
     .limit(1);
@@ -136,6 +140,7 @@ forms.get('/api/forms/:id', async (c) => {
       spamBlocked: Number(stats?.spamBlocked ?? 0),
       planUsed: sub?.used ?? 0,
       plan: sub?.plan ?? 'free',
+      cycle: sub?.cycle ?? 'monthly',
     },
   });
 });
