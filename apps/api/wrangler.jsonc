@@ -4,16 +4,44 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-05-01",
   "compatibility_flags": ["nodejs_compat"],
+
   "observability": {
     "enabled": true
   },
-  "upload_source_maps": true
-  /* TODO Phase 4 — bind:
-   *   - rate limiter:
-   *       "unsafe": { "bindings": [{ "name": "FORM_SUBMIT_LIMITER", "type": "ratelimit", "namespace_id": "1001", "simple": { "limit": 5, "period": 60 } }] }
-   *   - cron triggers:
-   *       "triggers": { "crons": ["0 0 1 * *"] }
-   *   - route binding for api.jff.dev
-   *   - secrets via `wrangler secret put`: DATABASE_URL, BETTER_AUTH_SECRET, RESEND_API_KEY, POLAR_ACCESS_TOKEN, POLAR_WEBHOOK_SECRET, SENTRY_DSN
-   */
+  "upload_source_maps": true,
+
+  /* Rate limiter for the submission endpoint — 5 reqs/min per (form, IP) tuple.
+     Phase 5's submission handler reads `c.env.FORM_SUBMIT_LIMITER`.
+     namespace_id is account-scoped — pick any unique integer. */
+  "unsafe": {
+    "bindings": [
+      {
+        "name": "FORM_SUBMIT_LIMITER",
+        "type": "ratelimit",
+        "namespace_id": "1001",
+        "simple": { "limit": 5, "period": 60 }
+      }
+    ]
+  },
+
+  /* Monthly reset cron — fires at 00:00 UTC on the 1st. Phase 9b implements
+     the scheduled() handler that resets submissionsUsed on active subs. */
+  "triggers": {
+    "crons": ["0 0 1 * *"]
+  },
+
+  /* Non-secret defaults. Real values land via `wrangler secret put` (production)
+     or .dev.vars (local). Both apps and packages read these from env. */
+  "vars": {
+    "WEB_BASE_URL": "https://justfuckingforms.com",
+    "EMAIL_FROM": "JFF <onboarding@resend.dev>"
+  }
+
+  /* Production routes — uncomment + commit when Phase 9b ships:
+     "routes": [{ "pattern": "api.jff.dev/*", "zone_name": "jff.dev" }]
+
+     Secrets (set via `wrangler secret put`):
+       DATABASE_URL, BETTER_AUTH_SECRET, BETTER_AUTH_URL,
+       RESEND_API_KEY, POLAR_ACCESS_TOKEN, POLAR_WEBHOOK_SECRET, SENTRY_DSN
+  */
 }

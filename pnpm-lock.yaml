@@ -20,6 +20,15 @@ importers:
 
   apps/api:
     dependencies:
+      '@jff/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@jff/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      drizzle-orm:
+        specifier: ^0.36.4
+        version: 0.36.4(@cloudflare/workers-types@4.20260501.1)(@neondatabase/serverless@0.10.4)(@types/pg@8.20.0)(@types/react@19.2.14)(kysely@0.28.16)(pg@8.20.0)(react@19.2.4)
       hono:
         specifier: ^4.6.14
         version: 4.12.16
