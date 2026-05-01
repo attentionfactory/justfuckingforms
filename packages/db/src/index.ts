@@ -9,13 +9,14 @@
 
 import { drizzle as drizzleHttp } from 'drizzle-orm/neon-http';
 import { drizzle as drizzleNode } from 'drizzle-orm/node-postgres';
+import { sql } from 'drizzle-orm';
 import { neon } from '@neondatabase/serverless';
 import { Pool } from 'pg';
 import * as schema from './schema';
 
 export const createDb = (databaseUrl: string) => {
-  const sql = neon(databaseUrl);
-  return drizzleHttp(sql, { schema });
+  const client = neon(databaseUrl);
+  return drizzleHttp(client, { schema });
 };
 
 export const createNodeDb = (databaseUrl: string, opts?: { logger?: boolean }) => {
@@ -25,4 +26,4 @@ export const createNodeDb = (databaseUrl: string, opts?: { logger?: boolean }) =
 
 export type Db = ReturnType<typeof createDb>;
 export type NodeDb = ReturnType<typeof createNodeDb>;
-export { schema };
+export { schema, sql };
