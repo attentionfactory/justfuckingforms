@@ -114,8 +114,10 @@ body {
 }
 
 .main {
-  padding: 32px 40px;
+  width: 100%;
   max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 40px;
 }
 .main h1 {
   font-size: 32px;
