@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { updateFormAction } from "@/app/dashboard/forms/actions";
 
 type Props = {
@@ -28,7 +29,13 @@ export function PauseToggle({ formId, isActive }: Props) {
       onClick={onClick}
       disabled={pending}
     >
-      {pending ? "..." : isActive ? "pause" : "resume"}
+      {pending ? (
+        <Spinner style={{ width: 13, height: 13 }} />
+      ) : isActive ? (
+        "pause"
+      ) : (
+        "resume"
+      )}
     </Button>
   );
 }

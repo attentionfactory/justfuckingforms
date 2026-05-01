@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { File, Inbox, CreditCard, Settings, ExternalLink } from "lucide-react";
 import { UserMenu } from "./user-menu";
+import { IconOrSpinner } from "./nav-spinner";
 
 type NavItem = {
   key: string;
@@ -51,7 +52,7 @@ export function Sidebar() {
         className={`sb-link ${active ? "active" : ""}`}
         style={{ textDecoration: "none" }}
       >
-        <Icon size={15} />
+        <IconOrSpinner icon={<Icon size={15} />} size={15} />
         <span style={{ flex: 1 }}>{item.label}</span>
         {item.badge != null && (
           <span className="mono" style={{ fontSize: 11, color: "#a3a3a3" }}>

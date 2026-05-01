@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams, usePathname } from "next/navigation";
+import { NavSpinner } from "./nav-spinner";
 
 const TABS = ["overview", "submissions", "settings", "code"] as const;
 export type FormTab = (typeof TABS)[number];
@@ -25,6 +26,9 @@ export function FormTabs() {
             href={href}
             scroll={false}
             style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
               padding: "10px 14px",
               fontSize: 14,
               fontWeight: 500,
@@ -36,6 +40,7 @@ export function FormTabs() {
             }}
           >
             {t}
+            <NavSpinner size={12} />
           </Link>
         );
       })}

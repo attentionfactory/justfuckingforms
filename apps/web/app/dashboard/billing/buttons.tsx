@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import type { BillingCycle } from "@jff/types";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { checkoutAction, portalAction } from "./actions";
 
 export function UpgradeButton({
@@ -57,7 +58,13 @@ export function UpgradeButton({
       disabled={disabled || pending}
       style={inlineStyle}
     >
-      {pending ? "redirecting..." : label}
+      {pending ? (
+        <>
+          <Spinner style={{ width: 14, height: 14 }} /> redirecting...
+        </>
+      ) : (
+        label
+      )}
     </Button>
   );
 }
@@ -99,7 +106,13 @@ export function ManageSubscriptionButton({
             : undefined
       }
     >
-      {pending ? "opening..." : "manage subscription"}
+      {pending ? (
+        <>
+          <Spinner style={{ width: 14, height: 14 }} /> opening...
+        </>
+      ) : (
+        "manage subscription"
+      )}
     </Button>
   );
 }

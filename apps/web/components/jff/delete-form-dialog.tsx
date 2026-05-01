@@ -6,6 +6,7 @@ import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Dialog,
   DialogContent,
@@ -145,7 +146,13 @@ export function DeleteFormDialog({
                 : undefined
             }
           >
-            {pending ? "deleting…" : "delete form"}
+            {pending ? (
+              <>
+                <Spinner style={{ width: 14, height: 14 }} /> deleting…
+              </>
+            ) : (
+              "delete form"
+            )}
           </Button>
         </div>
       </DialogContent>

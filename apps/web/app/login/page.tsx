@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import { signIn } from "@/lib/auth-client";
 
 export default function LoginPage() {
@@ -67,7 +68,13 @@ export default function LoginPage() {
             type="submit"
             disabled={state.kind === "sending"}
           >
-            {state.kind === "sending" ? "sending..." : "send me a link"}
+            {state.kind === "sending" ? (
+              <>
+                <Spinner style={{ width: 14, height: 14 }} /> sending...
+              </>
+            ) : (
+              "send me a link"
+            )}
           </Button>
           {state.kind === "error" && (
             <p

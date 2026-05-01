@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import { signIn } from "@/lib/auth-client";
 
 export default function LoginExpiredPage() {
@@ -78,7 +79,13 @@ export default function LoginExpiredPage() {
             type="submit"
             disabled={state.kind === "sending"}
           >
-            {state.kind === "sending" ? "sending..." : "send a new link"}
+            {state.kind === "sending" ? (
+              <>
+                <Spinner style={{ width: 14, height: 14 }} /> sending...
+              </>
+            ) : (
+              "send a new link"
+            )}
           </Button>
           {state.kind === "error" && (
             <p

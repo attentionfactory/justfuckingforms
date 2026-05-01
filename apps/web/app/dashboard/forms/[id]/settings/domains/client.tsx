@@ -7,6 +7,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { updateFormAction } from "@/app/dashboard/forms/actions";
 
 type Domain = { value: string; status: "verified" | "dev" | "pending" };
@@ -308,11 +309,15 @@ export function AllowedDomainsClient({
             </span>
           )}
           <Button onClick={save} disabled={!dirty || pending}>
-            {state.kind === "saving"
-              ? "saving…"
-              : state.kind === "saved"
-                ? "saved ✓"
-                : "save"}
+            {state.kind === "saving" ? (
+              <>
+                <Spinner style={{ width: 14, height: 14 }} /> saving…
+              </>
+            ) : state.kind === "saved" ? (
+              "saved ✓"
+            ) : (
+              "save"
+            )}
           </Button>
         </div>
       </div>

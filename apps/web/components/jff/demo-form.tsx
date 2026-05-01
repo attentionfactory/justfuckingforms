@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 
 type State = "idle" | "sending" | "done";
 
@@ -111,7 +112,11 @@ export function DemoForm() {
         </span>
         <Button type="submit" disabled={state !== "idle"}>
           {state === "idle" && "submit"}
-          {state === "sending" && "sending..."}
+          {state === "sending" && (
+            <>
+              <Spinner style={{ width: 14, height: 14 }} /> sending...
+            </>
+          )}
           {state === "done" && (
             <>
               <Check size={14} /> sent

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { DeleteFormDialog } from "./delete-form-dialog";
 import { updateFormAction } from "@/app/dashboard/forms/actions";
 
@@ -123,7 +124,15 @@ export function FormSettings({
       <div className="row between">
         <div className="row" style={{ gap: 8 }}>
           <Button onClick={save} disabled={!dirty || pending}>
-            {state.kind === "saving" ? "saving…" : state.kind === "saved" ? "saved ✓" : "save"}
+            {state.kind === "saving" ? (
+              <>
+                <Spinner style={{ width: 14, height: 14 }} /> saving…
+              </>
+            ) : state.kind === "saved" ? (
+              "saved ✓"
+            ) : (
+              "save"
+            )}
           </Button>
           {state.kind === "error" && (
             <span style={{ fontSize: 13, color: "var(--jff-spam-fg)" }}>

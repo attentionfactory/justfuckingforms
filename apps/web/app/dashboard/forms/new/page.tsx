@@ -6,6 +6,7 @@ import { Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { createFormAction } from "../actions";
 import type { NotificationFrequency } from "@jff/types";
 
@@ -282,7 +283,13 @@ export default function NewFormPage() {
             onClick={advance}
             disabled={pending}
           >
-            {pending ? "creating…" : "continue →"}
+            {pending ? (
+              <>
+                <Spinner style={{ width: 14, height: 14 }} /> creating…
+              </>
+            ) : (
+              "continue →"
+            )}
           </Button>
         ) : (
           <Button className="h-12 text-base" asChild>
