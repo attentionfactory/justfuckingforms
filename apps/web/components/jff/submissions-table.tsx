@@ -1,16 +1,23 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { ChevronDown, Download, MoreHorizontal, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { INFERRED_FIELDS, SUBS } from "@/lib/mock-data";
+import type { ApiSubmission, SchemaResponse } from "@/lib/api-types";
 
-export function ColumnPicker() {
+type FieldRow = SchemaResponse["fields"][number];
+
+export function ColumnPicker({
+  fields,
+  sampleSize,
+  onToggle,
+}: {
+  fields: FieldRow[];
+  sampleSize: number;
+  onToggle: (key: string) => void;
+}) {
   const [open, setOpen] = useState(false);
-  const [fields, setFields] = useState(INFERRED_FIELDS);
-
-  const toggle = (key: string) =>
-    setFields((fs) => fs.map((f) => (f.key === key ? { ...f, visible: !f.visible } : f)));
 
   return (
     <div style={{ position: "relative" }}>
@@ -42,13 +49,18 @@ export function ColumnPicker() {
               fontWeight: 600,
             }}
           >
-            columns · inferred from last 142 rows
+            columns · inferred from last {sampleSize} rows
           </div>
+          {fields.length === 0 && (
+            <div style={{ padding: "8px 10px", fontSize: 13, color: "#737373" }}>
+              no fields detected yet. submit something to your form.
+            </div>
+          )}
           {fields.map((f) => (
             <div
               key={f.key}
               className="row between"
-              onClick={() => toggle(f.key)}
+              onClick={() => onToggle(f.key)}
               style={{ padding: "8px 10px", borderRadius: 6, cursor: "pointer" }}
             >
               <div className="row" style={{ gap: 10, flex: 1, minWidth: 0 }}>
@@ -110,7 +122,23 @@ export function ColumnPicker() {
   );
 }
 
-export function SubmissionsTable() {
+export function SubmissionsTable({
+  formId,
+  rows,
+  total,
+  fields: initialFields,
+}: {
+  formId: string;
+  rows: ApiSubmission[];
+  total: number;
+  fields: FieldRow[];
+}) {
+  const [fields, setFields] = useState(initialFields);
+  const visible = fields.filter((f) => f.visible && !f.key.startsWith("_"));
+
+  const toggle = (key: string) =>
+    setFields((fs) => fs.map((f) => (f.key === key ? { ...f, visible: !f.visible } : f)));
+
   return (
     <div
       className="card"
@@ -161,131 +189,182 @@ export function SubmissionsTable() {
           </Button>
         </div>
         <div className="row" style={{ gap: 8 }}>
-          <ColumnPicker />
-          <Button variant="outline" size="sm">
-            <Download size={13} /> csv
+          <ColumnPicker fields={fields} sampleSize={total} onToggle={toggle} />
+          <Button variant="outline" size="sm" asChild>
+            <a href={`${process.env.NEXT_PUBLIC_API_URL ?? ""}/api/forms/${formId}/submissions/export`}>
+              <Download size={13} /> csv
+            </a>
           </Button>
         </div>
       </div>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
-        <thead>
-          <tr>
-            <th
-              style={{
-                width: 24,
-                padding: "10px 14px",
-                borderBottom: "1px solid var(--jff-line)",
-              }}
-            >
-              <input type="checkbox" />
-            </th>
-            {["received", "email", "message", "status", ""].map((h, i) => (
-              <th
-                key={h || i}
-                style={{
-                  textAlign: "left",
-                  fontWeight: 600,
-                  color: "var(--jff-fg)",
-                  padding: "10px 14px",
-                  borderBottom: "1px solid var(--jff-line)",
-                  fontSize: 12,
-                  letterSpacing: "0.02em",
-                  textTransform: "uppercase",
-                  width: i === 4 ? 32 : undefined,
-                }}
-              >
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {SUBS.map((s) => (
-            <tr key={s.id} style={{ opacity: s.spam ? 0.6 : 1 }}>
-              <td style={{ padding: 14, borderBottom: "1px solid var(--jff-line-soft)" }}>
-                <input type="checkbox" />
-              </td>
-              <td
-                className="mono text-muted"
-                style={{
-                  padding: 14,
-                  borderBottom: "1px solid var(--jff-line-soft)",
-                  fontSize: 13,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {s.when}
-              </td>
-              <td
-                style={{
-                  padding: 14,
-                  borderBottom: "1px solid var(--jff-line-soft)",
-                  color: "var(--jff-fg)",
-                  fontWeight: 500,
-                }}
-              >
-                <a
-                  href={`/dashboard/forms/a3f9k2x/submissions/${s.id}`}
-                  style={{ color: "var(--jff-fg)", textDecoration: "none" }}
-                >
-                  {s.who}
-                </a>
-              </td>
-              <td
-                style={{
-                  padding: 14,
-                  borderBottom: "1px solid var(--jff-line-soft)",
-                  color: "var(--jff-fg)",
-                  maxWidth: 380,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {s.message}
-              </td>
-              <td style={{ padding: 14, borderBottom: "1px solid var(--jff-line-soft)" }}>
-                <span
+      {rows.length === 0 ? (
+        <div style={{ padding: 48, textAlign: "center" }}>
+          <p className="text-muted" style={{ fontSize: 14, margin: 0 }}>
+            no submissions yet. paste the endpoint into a form and submit.
+          </p>
+        </div>
+      ) : (
+        <>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+            <thead>
+              <tr>
+                <th
                   style={{
-                    background: s.spam ? "var(--jff-spam-bg)" : "var(--jff-ok-bg)",
-                    color: s.spam ? "var(--jff-spam-fg)" : "var(--jff-ok-fg)",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    padding: "0 8px",
-                    height: 20,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    borderRadius: 999,
+                    width: 24,
+                    padding: "10px 14px",
+                    borderBottom: "1px solid var(--jff-line)",
                   }}
                 >
-                  {s.spam ? "spam" : "ok"}
-                </span>
-              </td>
-              <td style={{ padding: 14, borderBottom: "1px solid var(--jff-line-soft)" }}>
-                <MoreHorizontal size={16} color="#a3a3a3" />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div
-        className="between"
-        style={{
-          padding: "10px 16px",
-          borderTop: "1px solid var(--jff-line)",
-          fontSize: 13,
-        }}
-      >
-        <span className="text-muted">10 per page</span>
-        <div className="row" style={{ gap: 4 }}>
-          <Button variant="outline" size="sm" disabled>
-            ← prev
-          </Button>
-          <Button variant="outline" size="sm">
-            next →
-          </Button>
-        </div>
-      </div>
+                  <input type="checkbox" />
+                </th>
+                <Th>received</Th>
+                {visible.map((f) => (
+                  <Th key={f.key}>
+                    <span className="row" style={{ gap: 6, display: "inline-flex" }}>
+                      {f.key}
+                      {f.isNew && (
+                        <span
+                          className="dot"
+                          style={{ background: "#f59e0b", width: 6, height: 6 }}
+                        />
+                      )}
+                    </span>
+                  </Th>
+                ))}
+                <Th>status</Th>
+                <Th width={32} />
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((s) => (
+                <tr key={s.id} style={{ opacity: s.isSpam ? 0.6 : 1 }}>
+                  <td style={{ padding: 14, borderBottom: "1px solid var(--jff-line-soft)" }}>
+                    <input type="checkbox" />
+                  </td>
+                  <td
+                    className="mono text-muted"
+                    style={{
+                      padding: 14,
+                      borderBottom: "1px solid var(--jff-line-soft)",
+                      fontSize: 13,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    <Link
+                      href={`/dashboard/forms/${formId}/submissions/${s.id}`}
+                      style={{ color: "var(--jff-muted)", textDecoration: "none" }}
+                    >
+                      {relativeTime(s.createdAt)}
+                    </Link>
+                  </td>
+                  {visible.map((f) => {
+                    const v = s.data[f.key];
+                    return (
+                      <td
+                        key={f.key}
+                        style={{
+                          padding: 14,
+                          borderBottom: "1px solid var(--jff-line-soft)",
+                          color: "var(--jff-fg)",
+                          maxWidth: 280,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {v == null || v === "" ? (
+                          <span className="text-muted" style={{ fontSize: 12 }}>
+                            —
+                          </span>
+                        ) : (
+                          stringify(v)
+                        )}
+                      </td>
+                    );
+                  })}
+                  <td style={{ padding: 14, borderBottom: "1px solid var(--jff-line-soft)" }}>
+                    <span
+                      style={{
+                        background: s.isSpam ? "var(--jff-spam-bg)" : "var(--jff-ok-bg)",
+                        color: s.isSpam ? "var(--jff-spam-fg)" : "var(--jff-ok-fg)",
+                        fontSize: 11,
+                        fontWeight: 600,
+                        padding: "0 8px",
+                        height: 20,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        borderRadius: 999,
+                      }}
+                    >
+                      {s.isSpam ? "spam" : "ok"}
+                    </span>
+                  </td>
+                  <td style={{ padding: 14, borderBottom: "1px solid var(--jff-line-soft)" }}>
+                    <MoreHorizontal size={16} color="#a3a3a3" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div
+            className="between"
+            style={{
+              padding: "10px 16px",
+              borderTop: "1px solid var(--jff-line)",
+              fontSize: 13,
+            }}
+          >
+            <span className="text-muted">
+              showing {rows.length} of {total}
+            </span>
+            <div className="row" style={{ gap: 4 }}>
+              <Button variant="outline" size="sm" disabled>
+                ← prev
+              </Button>
+              <Button variant="outline" size="sm" disabled={rows.length >= total}>
+                next →
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
+}
+
+function Th({ children, width }: { children?: React.ReactNode; width?: number }) {
+  return (
+    <th
+      style={{
+        textAlign: "left",
+        fontWeight: 600,
+        color: "var(--jff-fg)",
+        padding: "10px 14px",
+        borderBottom: "1px solid var(--jff-line)",
+        fontSize: 12,
+        letterSpacing: "0.02em",
+        textTransform: "uppercase",
+        width,
+      }}
+    >
+      {children}
+    </th>
+  );
+}
+
+function stringify(v: unknown): string {
+  if (Array.isArray(v)) return v.map(String).join(", ");
+  if (typeof v === "object" && v !== null) return JSON.stringify(v);
+  return String(v);
+}
+
+function relativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m} min${m === 1 ? "" : "s"} ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  return `${d} day${d === 1 ? "" : "s"} ago`;
 }

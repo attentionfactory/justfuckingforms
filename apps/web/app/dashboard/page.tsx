@@ -2,16 +2,28 @@ import Link from "next/link";
 import { ExternalLink, MoreHorizontal, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UsageBar } from "@/components/jff/usage-bar";
-import { FORMS } from "@/lib/mock-data";
+import { apiGet } from "@/lib/api";
+import { PLAN_LIMITS } from "@/lib/plans";
+import type { FormListItem } from "@/lib/api-types";
+import type { Plan } from "@jff/types";
 
-type Props = {
-  searchParams: Promise<{ empty?: string }>;
-};
+type FormsResponse = { forms: FormListItem[] };
+type SubResponse = { plan: Plan; submissionsUsed: number };
 
-export default async function FormsListPage({ searchParams }: Props) {
-  const sp = await searchParams;
-  const isEmpty = sp.empty === "1";
-  const forms = isEmpty ? [] : FORMS;
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8787";
+
+export default async function FormsListPage() {
+  const { forms } = await apiGet<FormsResponse>("/api/forms");
+
+  // Per-user usage. Rather than a dedicated /api/me/usage endpoint, hit form
+  // detail of any form (Phase 9b will fold this into a single dashboard load).
+  const sub: SubResponse = forms.length
+    ? await apiGet<{ stats: { plan: Plan; planUsed: number } }>(
+        `/api/forms/${forms[0].id}`,
+      ).then((r) => ({ plan: r.stats.plan, submissionsUsed: r.stats.planUsed }))
+    : { plan: "free", submissionsUsed: 0 };
+
+  const limit = PLAN_LIMITS[sub.plan];
 
   return (
     <>
@@ -32,7 +44,7 @@ export default async function FormsListPage({ searchParams }: Props) {
         </div>
       </div>
 
-      {!isEmpty && (
+      {forms.length > 0 && (
         <div
           className="card"
           style={{
@@ -43,13 +55,13 @@ export default async function FormsListPage({ searchParams }: Props) {
             marginBottom: 20,
           }}
         >
-          <UsageBar used={1045} total={10000} />
+          <UsageBar used={sub.submissionsUsed} total={limit} />
           <div className="text-muted" style={{ fontSize: 13, marginTop: 10 }}>
             you&apos;re on{" "}
             <span className="text-fg" style={{ fontWeight: 600 }}>
-              pro
+              {sub.plan}
             </span>
-            . resets in 18 days.
+            . resets on the 1st.
           </div>
         </div>
       )}
@@ -95,7 +107,7 @@ export default async function FormsListPage({ searchParams }: Props) {
               </div>
             </div>
             <div className="text-muted" style={{ fontSize: 13 }}>
-              {forms.length} forms
+              {forms.length} {forms.length === 1 ? "form" : "forms"}
             </div>
           </div>
 
@@ -135,7 +147,7 @@ export default async function FormsListPage({ searchParams }: Props) {
                   <td style={{ padding: 14, borderBottom: "1px solid var(--jff-line-soft)" }}>
                     <span
                       className="dot"
-                      style={{ background: f.active ? "var(--jff-good)" : "#a3a3a3" }}
+                      style={{ background: f.isActive ? "var(--jff-good)" : "#a3a3a3" }}
                     />
                   </td>
                   <td
@@ -161,7 +173,7 @@ export default async function FormsListPage({ searchParams }: Props) {
                       fontSize: 13,
                     }}
                   >
-                    jff.dev/f/{f.id}
+                    {endpointLabel(f.id)}
                   </td>
                   <td
                     className="mono"
@@ -172,7 +184,7 @@ export default async function FormsListPage({ searchParams }: Props) {
                       color: "var(--jff-fg)",
                     }}
                   >
-                    {f.subs.toLocaleString()}
+                    {Number(f.submissionCount).toLocaleString()}
                   </td>
                   <td
                     className="text-muted"
@@ -182,7 +194,7 @@ export default async function FormsListPage({ searchParams }: Props) {
                       fontSize: 13,
                     }}
                   >
-                    {f.last}
+                    {f.lastSubmittedAt ? relativeTime(f.lastSubmittedAt) : "never"}
                   </td>
                   <td style={{ padding: 14, borderBottom: "1px solid var(--jff-line-soft)" }}>
                     <MoreHorizontal size={16} color="#a3a3a3" />
@@ -246,11 +258,29 @@ export default async function FormsListPage({ searchParams }: Props) {
         </div>
       )}
 
-      {!isEmpty && (
+      {forms.length > 0 && (
         <p className="text-muted" style={{ fontSize: 13, marginTop: 16 }}>
           you can have up to <span className="text-fg">∞</span> forms on pro. on free, 3.
         </p>
       )}
     </>
   );
+}
+
+function endpointLabel(id: string) {
+  const host = API_BASE.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  return `${host}/f/${id}`;
+}
+
+function relativeTime(iso: string): string {
+  const then = new Date(iso).getTime();
+  const diff = Date.now() - then;
+  const secs = Math.floor(diff / 1000);
+  if (secs < 60) return `${secs}s ago`;
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins} min${mins === 1 ? "" : "s"} ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,24 +11,51 @@ import {
   DialogContent,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { deleteFormAction } from "@/app/dashboard/forms/actions";
 
 type Props = {
+  formId: string;
   formName: string;
   submissionCount: number;
   trigger?: React.ReactNode;
 };
 
-export function DeleteFormDialog({ formName, submissionCount, trigger }: Props) {
+export function DeleteFormDialog({
+  formId,
+  formName,
+  submissionCount,
+  trigger,
+}: Props) {
+  const router = useRouter();
   const [confirmText, setConfirmText] = useState("");
   const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
   const canDelete = confirmText.trim() === formName;
+
+  const onDelete = () => {
+    setError(null);
+    startTransition(async () => {
+      const result = await deleteFormAction(formId);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setOpen(false);
+      router.push("/dashboard");
+      router.refresh();
+    });
+  };
 
   return (
     <Dialog
       open={open}
       onOpenChange={(v) => {
         setOpen(v);
-        if (!v) setConfirmText("");
+        if (!v) {
+          setConfirmText("");
+          setError(null);
+        }
       }}
     >
       <DialogTrigger asChild>
@@ -97,20 +125,27 @@ export function DeleteFormDialog({ formName, submissionCount, trigger }: Props) 
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
           />
+          {error && (
+            <p style={{ fontSize: 13, color: "var(--jff-spam-fg)", margin: "8px 0 0" }}>
+              {error}
+            </p>
+          )}
         </div>
 
         <div className="row" style={{ justifyContent: "flex-end", gap: 8 }}>
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={pending}>
             cancel
           </Button>
           <Button
-            disabled={!canDelete}
+            onClick={onDelete}
+            disabled={!canDelete || pending}
             style={
-              canDelete ? { background: "#b91c1c", color: "#fff" } : undefined
+              canDelete && !pending
+                ? { background: "#b91c1c", color: "#fff" }
+                : undefined
             }
-            // TODO Phase 6: call DELETE /api/forms/:id, redirect /dashboard
           >
-            delete form
+            {pending ? "deleting…" : "delete form"}
           </Button>
         </div>
       </DialogContent>

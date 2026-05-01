@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CodeBlock } from "@/components/jff/embed-snippet";
-import { FORMS, SUBS } from "@/lib/mock-data";
+import { apiGetOrNull } from "@/lib/api";
+import type { ApiSubmission } from "@/lib/api-types";
 
 type Props = {
   params: Promise<{ id: string; subId: string }>;
@@ -11,38 +12,24 @@ type Props = {
 
 export default async function SingleSubmissionPage({ params }: Props) {
   const { id, subId } = await params;
-  const form = FORMS.find((f) => f.id === id);
-  if (!form) notFound();
 
-  const sub = SUBS.find((s) => String(s.id) === subId) ?? SUBS[0];
+  const data = await apiGetOrNull<{ submission: ApiSubmission; formName: string }>(
+    `/api/forms/${id}/submissions/${subId}`,
+  );
+  if (!data) notFound();
+  const { submission, formName } = data;
 
-  // Stub-derive name and company from email handle
-  const name =
-    sub.who === "sarah@vercel.com"
-      ? "Sarah Drasner"
-      : sub.who.split("@")[0].replace(/[._-]/g, " ");
-  const company =
-    sub.who.includes("@")
-      ? sub.who.split("@")[1].split(".")[0].replace(/^\w/, (c) => c.toUpperCase())
-      : "";
-
-  const fields: Array<[string, string]> = [
-    ["email", sub.who],
-    ["name", name],
-    ["company", company],
-    ["message", sub.message],
-  ];
+  const fields = Object.entries(submission.data ?? {}).filter(
+    ([k]) => !k.startsWith("_"),
+  ) as Array<[string, unknown]>;
 
   const payload = JSON.stringify(
     {
-      email: sub.who,
-      name,
-      company,
-      message: sub.message,
+      ...submission.data,
       _meta: {
-        ip: "197.210.226.43",
-        ua: "Mozilla/5.0 (Mac; Safari/17.0)",
-        received_at: "2026-04-30T11:24:18Z",
+        ip: submission.ipAddress,
+        ua: submission.userAgent,
+        received_at: submission.createdAt,
       },
     },
     null,
@@ -53,21 +40,20 @@ export default async function SingleSubmissionPage({ params }: Props) {
     <div style={{ maxWidth: 800 }}>
       <div className="crumb">
         forms /{" "}
-        <Link href={`/dashboard/forms/${form.id}`} style={{ color: "var(--jff-fg)" }}>
-          {form.name}
+        <Link href={`/dashboard/forms/${id}`} style={{ color: "var(--jff-fg)" }}>
+          {formName}
         </Link>{" "}
         /{" "}
         <Link
-          href={`/dashboard/forms/${form.id}?tab=submissions`}
+          href={`/dashboard/forms/${id}?tab=submissions`}
           style={{ color: "var(--jff-muted)" }}
         >
           submissions
         </Link>{" "}
-        /{" "}
-        <span style={{ color: "var(--jff-fg)" }}>#{1042 + sub.id}</span>
+        / <span style={{ color: "var(--jff-fg)" }}>{shortId(submission.id)}</span>
       </div>
       <div className="between" style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24 }}>submission #{1042 + sub.id}</h1>
+        <h1 style={{ fontSize: 24 }}>submission {shortId(submission.id)}</h1>
         <div className="row">
           <Button variant="outline" size="sm">
             <ArrowLeft size={13} /> prev
@@ -93,20 +79,18 @@ export default async function SingleSubmissionPage({ params }: Props) {
         <div style={{ padding: "18px 20px", borderBottom: "1px solid var(--jff-line)" }}>
           <div className="row between">
             <div>
-              <div
-                className="text-fg"
-                style={{ fontWeight: 600, fontSize: 16 }}
-              >
-                {sub.who}
+              <div className="text-fg" style={{ fontWeight: 600, fontSize: 16 }}>
+                {pickEmail(submission.data) ?? "(no email field)"}
               </div>
               <div className="text-muted mono" style={{ fontSize: 13 }}>
-                received {sub.when} · 197.210.226.43
+                received {new Date(submission.createdAt).toLocaleString()}
+                {submission.ipAddress ? ` · ${submission.ipAddress}` : ""}
               </div>
             </div>
             <span
               style={{
-                background: "var(--jff-ok-bg)",
-                color: "var(--jff-ok-fg)",
+                background: submission.isSpam ? "var(--jff-spam-bg)" : "var(--jff-ok-bg)",
+                color: submission.isSpam ? "var(--jff-spam-fg)" : "var(--jff-ok-fg)",
                 fontSize: 11,
                 fontWeight: 600,
                 padding: "0 8px",
@@ -116,7 +100,7 @@ export default async function SingleSubmissionPage({ params }: Props) {
                 borderRadius: 999,
               }}
             >
-              delivered
+              {submission.isSpam ? "spam" : "delivered"}
             </span>
           </div>
         </div>
@@ -157,7 +141,7 @@ export default async function SingleSubmissionPage({ params }: Props) {
                     {k}
                   </td>
                   <td className="text-fg" style={{ padding: "10px 0" }}>
-                    {v}
+                    {stringify(v)}
                   </td>
                 </tr>
               ))}
@@ -182,4 +166,23 @@ export default async function SingleSubmissionPage({ params }: Props) {
       </div>
     </div>
   );
+}
+
+function shortId(id: string): string {
+  return `#${id.split("-")[0]}`;
+}
+
+function pickEmail(data: Record<string, unknown>): string | null {
+  for (const k of ["email", "from", "reply_to", "contact"]) {
+    const v = data[k];
+    if (typeof v === "string" && v.includes("@")) return v;
+  }
+  return null;
+}
+
+function stringify(v: unknown): string {
+  if (v == null) return "";
+  if (Array.isArray(v)) return v.map(String).join(", ");
+  if (typeof v === "object") return JSON.stringify(v);
+  return String(v);
 }

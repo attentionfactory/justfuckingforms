@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FORMS, INFERRED_FIELDS } from "@/lib/mock-data";
+import { apiGet, apiGetOrNull } from "@/lib/api";
+import type { ApiForm, FormStats, SchemaResponse } from "@/lib/api-types";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -10,9 +11,16 @@ type Props = {
 
 export default async function SchemaPage({ params }: Props) {
   const { id } = await params;
-  const form = FORMS.find((f) => f.id === id);
-  if (!form) notFound();
 
+  const detail = await apiGetOrNull<{ form: ApiForm; stats: FormStats }>(
+    `/api/forms/${id}`,
+  );
+  if (!detail) notFound();
+  const { form } = detail;
+
+  const { fields: INFERRED_FIELDS, sampleSize } = await apiGet<SchemaResponse>(
+    `/api/forms/${id}/schema`,
+  );
   const newCount = INFERRED_FIELDS.filter((f) => f.isNew).length;
 
   return (
@@ -48,7 +56,7 @@ export default async function SchemaPage({ params }: Props) {
               inferred schema
             </div>
             <div className="text-muted" style={{ fontSize: 12 }}>
-              from last 142 submissions · auto-updates
+              from last {sampleSize} submissions · auto-updates
             </div>
           </div>
           <div className="row" style={{ gap: 6 }}>

@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import Link from "next/link";
 import { Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { createFormAction } from "../actions";
+import type { NotificationFrequency } from "@jff/types";
 
 const FREQUENCIES = [
   ["every", "every submission", "one email per row. best for low-traffic forms."],
@@ -13,21 +16,59 @@ const FREQUENCIES = [
   ["none", "don't email me", "just store them. you'll check the dashboard."],
 ] as const;
 
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8787";
+
 export default function NewFormPage() {
   const [step, setStep] = useState(2);
-  const [workspace, setWorkspace] = useState("transcriptx");
-  const [name, setName] = useState("transcriptx contact");
-  const [email, setEmail] = useState("mercy@transcriptx.xyz");
-  const [freq, setFreq] = useState<string>("every");
+  const [workspace, setWorkspace] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [freq, setFreq] = useState<NotificationFrequency>("every");
   const [copied, setCopied] = useState(false);
-  const formId = "a3f9k2x"; // stub — Phase 6 returns real id from POST /api/forms
+  const [createdId, setCreatedId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  const endpointUrl = createdId ? `${API_BASE}/f/${createdId}` : "";
 
   const onCopy = () => {
+    if (!endpointUrl || !navigator.clipboard) return;
+    void navigator.clipboard.writeText(endpointUrl);
     setCopied(true);
-    if (navigator.clipboard) {
-      void navigator.clipboard.writeText(`https://jff.dev/f/${formId}`);
-    }
     window.setTimeout(() => setCopied(false), 1500);
+  };
+
+  const advance = () => {
+    setError(null);
+    if (step === 1) {
+      setStep(2);
+      return;
+    }
+    if (step === 2) {
+      // Validate + create
+      if (!name.trim()) {
+        setError("name the form first.");
+        return;
+      }
+      if (!email.includes("@")) {
+        setError("a real notification email please.");
+        return;
+      }
+      startTransition(async () => {
+        const result = await createFormAction({
+          name: name.trim(),
+          notificationEmail: email.trim(),
+          notificationFrequency: freq,
+        });
+        if (!result.ok) {
+          setError(result.error);
+          return;
+        }
+        setCreatedId(result.data.id);
+        setStep(3);
+      });
+    }
   };
 
   return (
@@ -199,7 +240,7 @@ export default function NewFormPage() {
                   color: "var(--jff-fg)",
                 }}
               >
-                https://jff.dev/f/{formId}
+                {endpointUrl}
               </div>
               <Button variant="outline" onClick={onCopy}>
                 {copied ? (
@@ -221,21 +262,31 @@ export default function NewFormPage() {
         </>
       )}
 
+      {error && (
+        <p style={{ fontSize: 14, color: "var(--jff-spam-fg)", margin: "0 0 16px" }}>
+          {error}
+        </p>
+      )}
+
       <div className="row between">
         <Button
           variant="ghost"
           onClick={() => setStep(Math.max(1, step - 1))}
-          disabled={step === 1}
+          disabled={step === 1 || pending || step === 3}
         >
           ← back
         </Button>
         {step < 3 ? (
-          <Button className="h-12 text-base" onClick={() => setStep(step + 1)}>
-            continue →
+          <Button
+            className="h-12 text-base"
+            onClick={advance}
+            disabled={pending}
+          >
+            {pending ? "creating…" : "continue →"}
           </Button>
         ) : (
           <Button className="h-12 text-base" asChild>
-            <a href={`/dashboard/forms/${formId}`}>go to form →</a>
+            <Link href={`/dashboard/forms/${createdId}`}>go to form →</Link>
           </Button>
         )}
       </div>
